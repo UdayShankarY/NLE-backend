@@ -14,6 +14,12 @@ const siteContentRoutes = require("./routes/siteContentRoutes");
 
 const app = express();
 
+app.use(cors({
+  origin: [
+    "http://localhost:5173",              // for local testing
+    "https://nle-frontend.vercel.app"     // your deployed frontend
+  ]
+}));
 // Middleware
 app.use(cors());
 app.use(express.json());
