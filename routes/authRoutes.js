@@ -40,9 +40,9 @@ router.post("/register", async (req, res) => {
     // Send email asynchronously (don't block response)
     sendEmail(
       email,
-      "Welcome to Next Level Events",
+      "Welcome to TheDecorParty",
       `
-<h2>🎉 Welcome to Next Level Events</h2>
+<h2>🎉 Welcome to TheDecorParty</h2>
 
 <p>Your account has been created successfully.</p>
 
@@ -58,7 +58,7 @@ router.post("/register", async (req, res) => {
 
 <p>We are excited to help you celebrate your special moments.</p>
 
-<p>Regards,<br>Next Level Events Team</p>
+<p>Regards,<br>TheDecorParty Team</p>
 `
     ).catch(err => console.log('Email failed:', err.message));
 
@@ -90,9 +90,9 @@ router.post("/google", async (req, res) => {
 
       sendEmail(
         email,
-        "Welcome to Next Level Events",
+        "Welcome to TheDecorParty",
         `
-<h2>🎉 Welcome to Next Level Events, ${firstName}!</h2>
+<h2>🎉 Welcome to TheDecorParty, ${firstName}!</h2>
 
 <p>Your account has been created successfully via Google.</p>
 
@@ -108,7 +108,7 @@ router.post("/google", async (req, res) => {
 
 <p>We are excited to help you celebrate your special moments.</p>
 
-<p>Regards,<br>Next Level Events Team</p>
+<p>Regards,<br>TheDecorParty Team</p>
 `
       ).catch(err => console.log('Email failed:', err.message));
     }

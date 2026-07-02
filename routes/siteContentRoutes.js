@@ -6,10 +6,10 @@ const DEFAULTS = {
   terms: {
     title: 'Terms & Conditions',
     content: `<h2>1. Acceptance of Terms</h2>
-<p>By accessing and using NextLevel Events services, you accept and agree to be bound by these Terms and Conditions.</p>
+<p>By accessing and using TheDecorParty services, you accept and agree to be bound by these Terms and Conditions.</p>
 
 <h2>2. Services</h2>
-<p>NextLevel Events provides event decoration and experience services in Bangalore. All bookings are subject to availability and confirmation by our team.</p>
+<p>TheDecorParty provides event decoration and experience services in Bangalore. All bookings are subject to availability and confirmation by our team.</p>
 
 <h2>3. Booking & Payment</h2>
 <p>A 50% advance payment is required to confirm your booking. The remaining balance must be paid before the event setup begins. We accept UPI, net banking, and card payments.</p>
@@ -18,7 +18,7 @@ const DEFAULTS = {
 <p>Cancellations made 72+ hours before the event will receive a full refund. Cancellations within 48 hours will forfeit the advance payment. Same-day cancellations are non-refundable.</p>
 
 <h2>5. Liability</h2>
-<p>NextLevel Events is not liable for delays caused by circumstances beyond our control including weather, traffic, or venue restrictions.</p>
+<p>TheDecorParty is not liable for delays caused by circumstances beyond our control including weather, traffic, or venue restrictions.</p>
 
 <h2>6. Changes to Terms</h2>
 <p>We reserve the right to modify these terms at any time. Continued use of our services constitutes acceptance of updated terms.</p>`,
@@ -38,7 +38,7 @@ const DEFAULTS = {
 <p>Our website uses cookies to enhance your browsing experience. You can disable cookies in your browser settings, though this may affect site functionality.</p>
 
 <h2>5. Contact</h2>
-<p>For privacy-related queries, contact us at nextleveleventsblr@gmail.com or call +91 70220 58460.</p>`,
+<p>For privacy-related queries, contact us at thedecorparty.team@gmail.com or call +91 70220 58460.</p>`,
   },
   refund: {
     title: 'Refund Policy',
@@ -60,7 +60,7 @@ const DEFAULTS = {
 <p>Custom-made items, personalised decorations, and perishable goods (flowers, cakes) are non-refundable once ordered.</p>
 
 <h2>Contact for Refunds</h2>
-<p>Email us at nextleveleventsblr@gmail.com with your booking ID to initiate a refund request.</p>`,
+<p>Email us at thedecorparty.team@gmail.com with your booking ID to initiate a refund request.</p>`,
   },
   'product-terms': {
     title: 'Terms & Conditions',
@@ -72,7 +72,7 @@ const DEFAULTS = {
 <li>The venue/location must be accessible at least 2 hours before the event start time for setup.</li>
 <li>Any damage to props or decor caused by guests will be charged separately.</li>
 <li>Add-ons must be confirmed at least 24 hours in advance.</li>
-<li>NextLevel Events reserves the right to substitute items of equal or greater value if specific items are unavailable.</li>
+<li>TheDecorParty reserves the right to substitute items of equal or greater value if specific items are unavailable.</li>
 <li>Prices are inclusive of setup and breakdown. GST applicable as per government norms.</li>
 <li>For outdoor events, we are not responsible for weather-related disruptions.</li>
 </ol>`,
@@ -80,7 +80,7 @@ const DEFAULTS = {
   about: {
     title: 'About Us',
     content: `<h2>Who We Are</h2>
-<p>NextLevel Events is Bangalore's most trusted event decoration and experience platform. We have been creating magical moments for over 5 years, serving 10,000+ happy customers across the city.</p>
+<p>TheDecorParty is Bangalore's most trusted event decoration and experience platform. We have been creating magical moments for over 5 years, serving 10,000+ happy customers across the city.</p>
 
 <h2>Our Mission</h2>
 <p>To make every celebration unforgettable — from intimate birthdays to grand weddings — with creative, personalised, and affordable event experiences.</p>
@@ -95,10 +95,10 @@ const DEFAULTS = {
 </ul>
 
 <h2>Why Choose Us</h2>
-<p>Same-day setup, 100% customisation, professional team, and on-time delivery — that's the NextLevel promise.</p>
+<p>Same-day setup, 100% customisation, professional team, and on-time delivery — that's the TheDecorParty promise.</p>
 
 <h2>Contact Us</h2>
-<p>📍 Bangalore, Karnataka<br/>📞 +91 70220 58460<br/>✉️ nextleveleventsblr@gmail.com</p>`,
+<p>📍 Bangalore, Karnataka<br/>📞 +91 70220 58460<br/>✉️ thedecorparty.team@gmail.com</p>`
   },
 };
 
