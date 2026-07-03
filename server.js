@@ -43,6 +43,7 @@ app.get("/", (req, res) => {
   res.send("Server working");
 });
 
+
 app.use("/api/auth", authRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/products", productRoutes);
