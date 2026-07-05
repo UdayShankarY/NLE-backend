@@ -37,6 +37,7 @@ const categoryRoutes = require("./routes/categoryRoutes");
 const sliderRoutes = require("./routes/sliderRoutes");
 const siteContentRoutes = require("./routes/siteContentRoutes");
 const adminRoutes = require("./routes/adminRoutes");
+const dashboardRoutes = require("./routes/dashboardRoutes");
 
 // 🔥 Routes
 app.get("/", (req, res) => {
@@ -50,8 +51,8 @@ app.use("/api/products", productRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/sliders", sliderRoutes);
 app.use("/api/site-content", siteContentRoutes);
-app.use("/admin", adminRoutes);
-
+app.use("/api/admin", adminRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 app.listen(process.env.PORT || 5000, () => {
   console.log("Server running on port", process.env.PORT || 5000);
 });
