@@ -14,6 +14,11 @@ exports.login = async (req, res) => {
       return res.status(400).json({ msg: "User not found" });
     }
 
+    // If user has no local password set (e.g. Google-only account), avoid calling bcrypt.compare on undefined.
+    if (!user.password) {
+      return res.status(400).json({ msg: "Invalid password" });
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
@@ -26,6 +31,7 @@ exports.login = async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
+    
 
     res.json({
       token,
