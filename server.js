@@ -44,6 +44,15 @@ app.get("/", (req, res) => {
   res.send("Server working");
 });
 
+app.get("/api/health", (req, res) => {
+  res.status(200).json({
+    success: true,
+    status: "healthy",
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+  });
+});
+
 
 app.use("/api/auth", authRoutes);
 app.use("/api/payment", paymentRoutes);
