@@ -53,6 +53,10 @@ app.get("/api/health", (req, res) => {
   });
 });
 
+const aiRoutes = require("./routes/ai.routes");
+
+app.use("/api/ai", aiRoutes);
+
 
 app.use("/api/auth", authRoutes);
 app.use("/api/payment", paymentRoutes);

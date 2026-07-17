@@ -1,15 +1,15 @@
 import { Document } from "@langchain/core/documents";
-import { embeddingModel } from "../providers/embedding.provider";
+import { embeddingProvider } from "../providers/embedding.provider";
 
 export class EmbeddingService {
   async embedDocuments(documents: Document[]) {
-    return embeddingModel.embedDocuments(
+    return embeddingProvider.embedDocuments(
       documents.map((doc) => doc.pageContent)
     );
   }
 
   async embedQuery(query: string) {
-    return embeddingModel.embedQuery(query);
+    return embeddingProvider.embedQuery(query);
   }
 }
 

@@ -69,11 +69,9 @@ ${product.reviewCount ?? 0}
           pageContent: `
 Category: ${category.name}
 
-Slug:
-${category.slug ?? ""}
+Slug: ${category.slug ?? ""}
 
-Products:
-${category.productCount ?? 0}
+Products: ${category.productCount ?? 0}
 
 Subcategories:
 ${(category.subcategories ?? [])
