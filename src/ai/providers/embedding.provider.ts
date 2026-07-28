@@ -2,21 +2,18 @@ import { Embeddings } from "@langchain/core/embeddings";
 import { InferenceClient } from "@huggingface/inference";
 import { AI_CONFIG } from "../config";
 
-const client = new InferenceClient(process.env.HUGGINGFACE_API_KEY!);
-console.log("HF TOKEN:", process.env.HUGGINGFACE_API_KEY);
-console.log("HF TOKEN LENGTH:", process.env.HUGGINGFACE_API_KEY?.length);
+const client = new InferenceClient(AI_CONFIG.embedding.apiKey);
+
 export class HuggingFaceEmbeddings extends Embeddings {
   constructor() {
     super({});
   }
 
   async embedQuery(text: string): Promise<number[]> {
-    const embedding = await client.featureExtraction({
+    return (await client.featureExtraction({
       model: AI_CONFIG.embedding.model,
       inputs: text,
-    });
-
-    return embedding as number[];
+    })) as number[];
   }
 
   async embedDocuments(texts: string[]): Promise<number[][]> {
