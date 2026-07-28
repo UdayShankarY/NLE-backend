@@ -3,7 +3,8 @@ import { InferenceClient } from "@huggingface/inference";
 import { AI_CONFIG } from "../config";
 
 const client = new InferenceClient(process.env.HUGGINGFACE_API_KEY!);
-
+console.log("HF TOKEN:", process.env.HUGGINGFACE_API_KEY);
+console.log("HF TOKEN LENGTH:", process.env.HUGGINGFACE_API_KEY?.length);
 export class HuggingFaceEmbeddings extends Embeddings {
   constructor() {
     super({});

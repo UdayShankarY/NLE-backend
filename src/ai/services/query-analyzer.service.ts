@@ -1,5 +1,5 @@
 import { llm } from "../providers/llm.provider";
-import { intentPrompt } from "../graph/graph_prompts/intent.prompt";
+import { intentPrompt } from "../graph_backup/graph_prompts/intent.prompt";
 import { categoryService } from "./category.service";
 
 export type IntentType =
