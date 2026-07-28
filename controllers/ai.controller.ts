@@ -3,24 +3,31 @@ import { aiService } from "../src/ai/services/ai.service";
 
 export class AIController {
   async chat(req: Request, res: Response) {
-    try {
-      const { message } = req.body;
+    console.log("🔥 AI CONTROLLER HIT");
+    console.log("Body:", req.body);
 
-      if (!message) {
+    try {
+      const { sessionId, message } = req.body;
+
+      // Validate request
+      if (!sessionId || !message) {
         return res.status(400).json({
           success: false,
-          message: "Message is required",
+          message: "sessionId and message are required",
         });
       }
 
-      const response = await aiService.chat(message);
+      console.log("[AI CONTROLLER] Session:", sessionId);
+      console.log("[AI CONTROLLER] Message:", message);
 
-      return res.json({
+      const response = await aiService.chat(sessionId, message);
+
+      return res.status(200).json({
         success: true,
         data: response,
       });
     } catch (error) {
-      console.error(error);
+      console.error("[AI CONTROLLER ERROR]", error);
 
       return res.status(500).json({
         success: false,

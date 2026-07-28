@@ -38,21 +38,19 @@ ${(product.inclusions ?? []).join(", ")}
 
 Featured:
 ${product.featured ? "Yes" : "No"}
-
-Rating:
-${product.rating ?? 0}
-
-Reviews:
-${product.reviewCount ?? 0}
           `.trim(),
 
           metadata: {
             collection: "products",
             id: product._id.toString(),
+            slug: product._id.toString(),
+            name: product.name,
+            image: product.image,
             category: product.categoryName,
             categoryId: product.categoryId?.toString(),
             price: product.price,
             featured: product.featured,
+            description: product.description ?? "",
             active: product.active,
           },
         })
