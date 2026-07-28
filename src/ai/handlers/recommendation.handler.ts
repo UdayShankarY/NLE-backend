@@ -1,83 +1,58 @@
-import { ChatPromptTemplate } from "@langchain/core/prompts";
-import { llm } from "../providers/llm.provider";
+import { entityExtractorService } from "../services/entity-extractor.service";
+import { businessFilterService } from "../services/business-filter.service";
+import { recommendationService } from "../services/recommendation.service";
 import { retrieverService } from "../retriever/retriever.service";
 import { chatService } from "../services/chat.service";
 
-const recommendationPrompt = ChatPromptTemplate.fromTemplate(`
-You are The Decor Party AI Assistant.
-
-Answer naturally and briefly.
-
-Rules:
-- Maximum 80 words.
-- Recommend only ONE best package.
-- Don't list all products.
-- Don't invent information.
-- If products exist, end with:
-👇 Explore the recommended packages below.
-
-Conversation:
-{history}
-
-Products:
-{products}
-
-Question:
-{question}
-`);
-
 export class RecommendationHandler {
+  async handle(message: string, sessionId: string) {
+    // Load conversation history (for future use if needed)
+    await chatService.getConversation(sessionId);
 
-    async handle(message: string, sessionId: string) {
+    // Extract entities from the user query
+    const entities = entityExtractorService.extract(message);
 
-        const history = await chatService.getConversation(sessionId);
+    // Retrieve relevant documents
+    const docs = await retrieverService.retrieve(message);
 
-        const docs = await retrieverService.retrieve(message);
+    // Keep only product documents
+    const productDocs = docs.filter(
+      (doc) => doc.metadata?.collection === "products"
+    );
 
-        const products = docs
-            .filter(doc => doc.metadata.collection === "products")
-            .map(doc => ({
-                id: doc.metadata.id,
-                slug: doc.metadata.slug ?? doc.metadata.id,
-                name: doc.metadata.name,
-                image: doc.metadata.image,
-                price: Number(doc.metadata.price),
-                description: doc.metadata.description ?? ""
-            }));
+    // Apply business rules (budget, category, theme, etc.)
+    const filteredDocs = businessFilterService.filter(
+    productDocs,
+    entities
+    );
 
-        const historyText = history
-            .slice(-5)
-            .map(h => `${h.role}: ${h.content}`)
-            .join("\n");
+    // Generate AI recommendation
+    const answer = await recommendationService.recommend({
+      category: entities.category ?? null,
+      budget: entities.budget ?? entities.maxBudget ?? null,
+      theme: entities.theme ?? null,
+      audience: null,
+      guests: null,
+      venue: null,
+      city: null,
+      documents: filteredDocs as any,
+    });
 
-        const productContext = products
-            .map(p =>
-`Name: ${p.name}
-Price: ₹${p.price}
-Description: ${p.description}`)
-            .join("\n\n");
+    // Return product cards to frontend
+    const products = filteredDocs.map((doc: any) => ({
+      id: doc.metadata.id,
+      slug: doc.metadata.slug ?? doc.metadata.id,
+      name: doc.metadata.name,
+      image: doc.metadata.image,
+      price: Number(doc.metadata.price),
+      description: doc.metadata.description ?? "",
+    }));
 
-        const prompt = await recommendationPrompt.invoke({
-            history: historyText,
-            products: productContext,
-            question: message
-        });
-
-        const response = await llm.invoke(prompt);
-
-        const answer =
-            typeof response.content === "string"
-                ? response.content
-                : response.content
-                    .map((c: any) => ("text" in c ? c.text : ""))
-                    .join("");
-
-        return {
-            answer,
-            products
-        };
-    }
-
+    return {
+      answer,
+      products,
+    };
+  }
 }
 
 export const recommendationHandler = new RecommendationHandler();

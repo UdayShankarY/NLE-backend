@@ -1,12 +1,10 @@
 import { Document } from "@langchain/core/documents";
-
 import { llm } from "../providers/llm.provider";
-
 import { recommendationPrompt } from "../prompts/recommendation.prompt";
 
 interface RecommendationInput {
   category: string | null;
-  budget: number | null;
+  budget: number |null;
   theme: string | null;
   audience: string | null;
   guests: number | null;
@@ -16,18 +14,87 @@ interface RecommendationInput {
 }
 
 class RecommendationService {
-  async recommend(input: RecommendationInput): Promise<string> {
-    const documents = input.documents
-      .slice(0, 3)
-      .map((doc, index) => {
-        const metadata = doc.metadata ?? {};
-        const description = String(metadata.description ?? "").trim();
+  private rankDocuments(
+    docs: Document[],
+    input: RecommendationInput
+  ): Document[] {
+    return [...docs]
+      .map((doc) => {
+        let score = 0;
+        const meta = doc.metadata ?? {};
 
-        return `Product ${index + 1}:
-Name: ${metadata.name ?? "Unknown"}
-Category: ${metadata.category ?? "Unknown"}
-Price: ₹${metadata.price ?? "Unknown"}
-Description: ${description.slice(0, 140)}\n`;
+        // Category match
+        if (
+          input.category &&
+          String(meta.category).toLowerCase() === input.category.toLowerCase()
+        ) {
+          score += 40;
+        }
+
+        // Theme match
+        if (
+          input.theme &&
+          String(meta.theme).toLowerCase() === input.theme.toLowerCase()
+        ) {
+          score += 20;
+        }
+
+        // Budget match
+        const price = Number(meta.price);
+
+        if (
+          input.budget &&
+          !isNaN(price) &&
+          price <= input.budget
+        ) {
+          score += 30;
+        }
+
+        // Featured
+        if (meta.featured === true) {
+          score += 5;
+        }
+
+        // Popularity
+        if (meta.popularity) {
+          score += Number(meta.popularity);
+        }
+
+        return { doc, score };
+      })
+      .sort((a, b) => b.score - a.score)
+      .map((x) => x.doc);
+  }
+
+  async recommend(input: RecommendationInput): Promise<string> {
+    if (!input.documents.length) {
+      return "Sorry, I couldn't find any matching decoration packages.";
+    }
+
+    const rankedDocs = this.rankDocuments(
+      input.documents,
+      input
+    );
+
+    const documents = rankedDocs
+      .slice(0, 5)
+      .map((doc, index) => {
+        const meta = doc.metadata ?? {};
+
+        return `
+Product ${index + 1}
+
+Name: ${meta.name ?? "N/A"}
+
+Category: ${meta.category ?? "N/A"}
+
+Theme: ${meta.theme ?? "N/A"}
+
+Price: ₹${meta.price ?? "N/A"}
+
+Description:
+${String(meta.description ?? "").slice(0, 180)}
+`;
       })
       .join("\n");
 
@@ -48,4 +115,5 @@ Description: ${description.slice(0, 140)}\n`;
   }
 }
 
-export const recommendationService = new RecommendationService();
+export const recommendationService =
+  new RecommendationService();

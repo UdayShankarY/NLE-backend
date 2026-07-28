@@ -1,11 +1,20 @@
-import { intentClassifier } from "../ai/classifier/intent.classifier";
+import { intentDetectorService } from "../ai/services/intent-detector.service";
 
-console.log(intentClassifier.classify("hi"));
+const tests = [
+  "Hi",
+  "Show me birthday decorations",
+  "Recommend premium anniversary decoration",
+  "Book my decoration",
+  "What are your working hours?",
+  "I need help with my booking",
+  "Call me",
+  "Thank you",
+  "Bye",
+  "random text",
+];
 
-console.log(intentClassifier.classify("birthday decoration"));
-
-console.log(intentClassifier.classify("where is your office"));
-
-console.log(intentClassifier.classify("cancel booking"));
-
-console.log(intentClassifier.classify("suggest a decoration for twins"));
+for (const query of tests) {
+  console.log(query);
+  console.log(intentDetectorService.detect(query));
+  console.log("------------------------");
+}

@@ -36,7 +36,7 @@ export class RetrieverService {
 
 //     return docs;
 //   }
-  async retrieve(query: string): Promise<Document[]> {
+async retrieve(query: string): Promise<Document[]> {
   console.log("[RETRIEVER] Query:", query);
   console.log("[RETRIEVER] Retriever exists:", !!this.retriever);
 
@@ -46,13 +46,24 @@ export class RetrieverService {
 
   const docs = await this.retriever.invoke(query);
 
-  console.log("[RETRIEVER] Number of retrieved documents:", docs.length);
+  // Keep only product documents
+  const productDocs = docs.filter(
+    (doc) => doc.metadata?.collection === "products"
+  );
 
-  docs.forEach((doc, index) => {
-    console.log(`[RETRIEVER] Document ${index + 1} metadata:`, doc.metadata);
+  console.log(
+    "[RETRIEVER] Number of retrieved product documents:",
+    productDocs.length
+  );
+
+  productDocs.forEach((doc, index) => {
+    console.log(
+      `[RETRIEVER] Product ${index + 1}:`,
+      doc.metadata.name
+    );
   });
 
-  return docs;
+  return productDocs;
 }
 }
 
