@@ -34,6 +34,15 @@ export const login = async (req: Request, res: Response) => {
         lastName: user.lastName || "",
         email: user.email,
         role: user.role,
+        phone: user.phone || "",
+        gender: user.gender || "",
+        dateOfBirth: user.dateOfBirth || "",
+        address: user.address || "",
+        city: user.city || "",
+        state: user.state || "",
+        country: user.country || "",
+        pincode: user.pincode || "",
+        photoURL: user.photoURL || "",
       },
     });
   } catch (err) {

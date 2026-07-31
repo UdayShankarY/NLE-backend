@@ -2,7 +2,10 @@ import jwt from "jsonwebtoken";
 import { Request, Response, NextFunction } from "express";
 
 export default function authMiddleware(req: Request, res: Response, next: NextFunction) {
-  const token = req.headers.authorization;
+  const authorization = req.headers.authorization;
+  const token = authorization?.startsWith("Bearer ")
+    ? authorization.slice(7).trim()
+    : authorization;
 
   if (!token) return res.status(401).json({ msg: "No token" });
   try {

@@ -6,10 +6,53 @@ import crypto from "crypto";
 import sendEmail from "../utils/sendEmail";
 import User from "../models/User";
 import { login } from "../controllers/authController";
+import authMiddleware from "../middleware/authMiddleware";
 
 const router = express.Router();
 
+const profileFields = [
+  "firstName", "lastName", "phone", "gender", "dateOfBirth",
+  "address", "city", "state", "country", "pincode", "photoURL",
+] as const;
+
+function publicUser(user: any) {
+  return profileFields.reduce((profile, field) => {
+    profile[field] = user[field] || "";
+    return profile;
+  }, {
+    id: String(user._id),
+    email: user.email,
+    role: user.role,
+  } as Record<string, unknown>);
+}
+
 router.post("/login", login);
+
+router.get("/profile", authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as Request & { user?: { id?: string } }).user?.id;
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ msg: "User not found" });
+    return res.json({ user: publicUser(user) });
+  } catch (err) {
+    return res.status(500).json({ msg: "Failed to load profile" });
+  }
+});
+
+router.put("/profile", authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as Request & { user?: { id?: string } }).user?.id;
+    const updates = profileFields.reduce((values, field) => {
+      if (field in req.body && typeof req.body[field] === "string") values[field] = req.body[field].trim();
+      return values;
+    }, {} as Record<string, string>);
+    const user = await User.findByIdAndUpdate(userId, { $set: updates }, { new: true, runValidators: true });
+    if (!user) return res.status(404).json({ msg: "User not found" });
+    return res.json({ user: publicUser(user) });
+  } catch (err) {
+    return res.status(500).json({ msg: "Failed to save profile" });
+  }
+});
 
 router.post("/register", async (req: Request, res: Response) => {
   try {
@@ -29,6 +72,7 @@ router.post("/register", async (req: Request, res: Response) => {
       email,
       password: hashedPassword,
       role: "user",
+      phone: req.body.phone || "",
     });
 
     await user.save();
@@ -106,6 +150,15 @@ router.post("/google", async (req: Request, res: Response) => {
         lastName: user.lastName,
         email: user.email,
         role: user.role,
+        phone: user.phone || "",
+        gender: user.gender || "",
+        dateOfBirth: user.dateOfBirth || "",
+        address: user.address || "",
+        city: user.city || "",
+        state: user.state || "",
+        country: user.country || "",
+        pincode: user.pincode || "",
+        photoURL: user.photoURL || "",
       },
     });
   } catch (err) {
