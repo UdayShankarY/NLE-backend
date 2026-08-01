@@ -1,5 +1,6 @@
 import express, { Request, Response } from "express";
 import Product from "../models/Product";
+import { aiReindexService } from "../src/ai/services/ai-reindex.service";
 
 const router = express.Router();
 
@@ -38,6 +39,7 @@ router.post("/", async (req: Request, res: Response) => {
   try {
     const product = new Product(req.body);
     await product.save();
+    aiReindexService.scheduleReindex();
     res.json(product);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -47,6 +49,9 @@ router.post("/", async (req: Request, res: Response) => {
 router.put("/:id", async (req: Request, res: Response) => {
   try {
     const updated = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (updated) {
+      aiReindexService.scheduleReindex();
+    }
     res.json(updated);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -55,7 +60,10 @@ router.put("/:id", async (req: Request, res: Response) => {
 
 router.delete("/:id", async (req: Request, res: Response) => {
   try {
-    await Product.findByIdAndDelete(req.params.id);
+    const deleted = await Product.findByIdAndDelete(req.params.id);
+    if (deleted) {
+      aiReindexService.scheduleReindex();
+    }
     res.json({ message: "Product deleted" });
   } catch (err: any) {
     res.status(500).json({ error: err.message });

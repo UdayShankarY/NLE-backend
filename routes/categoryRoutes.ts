@@ -1,5 +1,6 @@
 import express, { Request, Response } from "express";
 import Category from "../models/Category";
+import { aiReindexService } from "../src/ai/services/ai-reindex.service";
 
 const router = express.Router();
 
@@ -23,6 +24,7 @@ router.post("/", async (req: Request, res: Response) => {
 
     const category = new Category(req.body);
     await category.save();
+    aiReindexService.scheduleReindex();
 
     res.json(category);
   } catch (err: any) {
@@ -33,6 +35,9 @@ router.post("/", async (req: Request, res: Response) => {
 router.put("/:id", async (req: Request, res: Response) => {
   try {
     const updated = await Category.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (updated) {
+      aiReindexService.scheduleReindex();
+    }
     res.json(updated);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -41,7 +46,10 @@ router.put("/:id", async (req: Request, res: Response) => {
 
 router.delete("/:id", async (req: Request, res: Response) => {
   try {
-    await Category.findByIdAndDelete(req.params.id);
+    const deleted = await Category.findByIdAndDelete(req.params.id);
+    if (deleted) {
+      aiReindexService.scheduleReindex();
+    }
     res.json({ message: "Category deleted" });
   } catch (err: any) {
     res.status(500).json({ error: err.message });

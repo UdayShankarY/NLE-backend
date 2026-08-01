@@ -6,12 +6,20 @@ export class VectorStoreService {
   private vectorStore: FaissStore | null = null;
 
   async create(documents: Document[]) {
-    this.vectorStore = await FaissStore.fromDocuments(
-      documents,
-      embeddingProvider
-    );
+    const newStore = await this.createTemporaryStore(documents);
+    this.replaceStore(newStore);
 
-    return this.vectorStore;
+    return newStore;
+  }
+
+  async createTemporaryStore(documents: Document[]): Promise<FaissStore> {
+    return FaissStore.fromDocuments(documents, embeddingProvider);
+  }
+
+  replaceStore(newStore: FaissStore): FaissStore | null {
+    const previousStore = this.vectorStore;
+    this.vectorStore = newStore;
+    return previousStore;
   }
 
   async save(path: string) {
