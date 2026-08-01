@@ -2,6 +2,7 @@ import { mongoLoader } from "../loaders/mongo.loader";
 import { retrieverService } from "../retriever/retriever.service";
 import { textSplitterService } from "./text-splitter.service";
 import { vectorStoreService } from "../vectorstore/faiss.store";
+import { queryAnalyzerService } from "./query-analyzer.service";
 
 const REINDEX_DEBOUNCE_MS = 10_000;
 
@@ -13,6 +14,7 @@ export class AIReindexService {
   /** Schedule one rebuild for a burst of related CRUD operations. */
   scheduleReindex(): void {
     if (this.rebuilding) {
+      console.log("[AI] Reindex Scheduled");
       this.rerunRequested = true;
       return;
     }
@@ -21,7 +23,7 @@ export class AIReindexService {
       clearTimeout(this.scheduledTimer);
     }
 
-    console.log("[AI] Reindex scheduled");
+    console.log("[AI] Reindex Scheduled");
     this.scheduledTimer = setTimeout(() => {
       this.scheduledTimer = null;
       void this.rebuildKnowledge();
@@ -45,19 +47,23 @@ export class AIReindexService {
     try {
       console.log("[AI] Loading MongoDB");
       const documents = await mongoLoader.loadKnowledge();
+      console.log("[AI] Documents Loaded:", documents.length);
 
       console.log("[AI] Splitting documents");
       const chunks = await textSplitterService.splitDocuments(documents);
 
-      console.log("[AI] Creating embeddings");
+      console.log("[AI] Rebuilding FAISS");
       const newStore = await vectorStoreService.createTemporaryStore(chunks);
 
-      console.log("[AI] Swapping vector store");
+      console.log("[AI] Replacing Vector Store");
       previousStore = vectorStoreService.replaceStore(newStore);
 
       retrieverService.initialize(3);
-      console.log("[AI] Retriever refreshed");
-      console.log("[AI] Reindex completed");
+      console.log("[AI] Retriever Refreshed");
+
+      await queryAnalyzerService.refreshCategories();
+
+      console.log("[AI] Reindex Completed");
     } catch (error) {
       if (previousStore) {
         vectorStoreService.replaceStore(previousStore);

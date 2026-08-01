@@ -6,6 +6,13 @@ export class RetrieveHandler {
 
     const docs = await retrieverService.retrieve(message);
 
+    console.log("Documents received by router:", docs.length);
+    if (docs.length === 0) {
+      console.log("No documents found. Returning fallback response.");
+    } else {
+      console.log("Routing to recommendation/product handler.");
+    }
+
     const products = docs
       .filter(doc => doc.metadata.collection === "products")
       .map(doc => ({

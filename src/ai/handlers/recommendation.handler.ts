@@ -3,17 +3,19 @@ import { businessFilterService } from "../services/business-filter.service";
 import { recommendationService } from "../services/recommendation.service";
 import { retrieverService } from "../retriever/retriever.service";
 import { chatService } from "../services/chat.service";
+import { Document } from "@langchain/core/documents";
 
 export class RecommendationHandler {
-  async handle(message: string, sessionId: string) {
+  async handle(message: string, sessionId: string, sourceDocuments?: Document[]) {
+    console.log("Recommendation Handler Started");
+
     // Load conversation history (for future use if needed)
     await chatService.getConversation(sessionId);
 
     // Extract entities from the user query
     const entities = entityExtractorService.extract(message);
 
-    // Retrieve relevant documents
-    const docs = await retrieverService.retrieve(message);
+    const docs = sourceDocuments ?? await retrieverService.retrieve(message);
 
     // Keep only product documents
     const productDocs = docs.filter(
@@ -47,6 +49,11 @@ export class RecommendationHandler {
       price: Number(doc.metadata.price),
       description: doc.metadata.description ?? "",
     }));
+
+    console.log("Products:", products.length);
+    filteredDocs.forEach((product) => {
+      console.log(product.metadata?.name);
+    });
 
     return {
       answer,
