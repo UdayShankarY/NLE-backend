@@ -15,7 +15,25 @@ const profileFields = [
   "address", "city", "state", "country", "pincode", "photoURL",
 ] as const;
 
-function publicUser(user: any) {
+type PublicUserShape = {
+  _id?: unknown;
+  email?: unknown;
+  firstName?: unknown;
+  lastName?: unknown;
+  photoURL?: unknown;
+  role?: unknown;
+  wishlist?: unknown[];
+  phone?: unknown;
+  gender?: unknown;
+  dateOfBirth?: unknown;
+  address?: unknown;
+  city?: unknown;
+  state?: unknown;
+  country?: unknown;
+  pincode?: unknown;
+};
+
+function publicUser(user: PublicUserShape) {
   const email = typeof user.email === 'string' ? user.email.trim() : '';
   const firstName = typeof user.firstName === 'string' ? user.firstName.trim() : '';
   const lastName = typeof user.lastName === 'string' ? user.lastName.trim() : '';
@@ -25,6 +43,7 @@ function publicUser(user: any) {
     id: String(user._id),
     email,
     role: typeof user.role === 'string' ? user.role : 'user',
+    wishlist: Array.isArray(user.wishlist) ? user.wishlist.map((item: unknown) => String(item)) : [],
     name: [firstName, lastName].filter(Boolean).join(' ') || email,
     avatar: photoURL,
     photoURL,
@@ -172,6 +191,7 @@ router.post("/google", async (req: Request, res: Response) => {
       token,
       user: {
         id: String(user._id),
+        wishlist: Array.isArray(user.wishlist) ? user.wishlist.map((item) => String(item)) : [],
         name: [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email,
         firstName: user.firstName,
         lastName: user.lastName,

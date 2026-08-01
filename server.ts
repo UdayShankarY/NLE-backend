@@ -12,6 +12,7 @@ import siteContentRoutes from "./routes/siteContentRoutes";
 import adminRoutes from "./routes/adminRoutes";
 import dashboardRoutes from "./routes/dashboardRoutes";
 import aiRoutes from "./routes/ai.routes";
+import wishlistRoutes from "./routes/wishlistRoutes";
 import { initializeAI } from "./src/ai";
 
 const app = express();
@@ -35,10 +36,23 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
 app.use(express.json());
 
-mongoose
-  .connect(process.env.MONGO_URI || "")
-  .then(() => console.log("MongoDB Connected"))
-  .catch((err: unknown) => console.error("MongoDB Error:", err));
+// Connect to MongoDB before starting the HTTP server.
+// Use a short serverSelectionTimeoutMS so failures surface quickly and
+// set `bufferCommands: false` so queries fail fast instead of buffering.
+async function start() {
+  try {
+    await mongoose.connect(process.env.MONGO_URI || "", {
+      serverSelectionTimeoutMS: 5000,
+      // disable command buffering so we get immediate errors when DB is unavailable
+      bufferCommands: false,
+    } as mongoose.ConnectOptions);
+    console.log("MongoDB Connected");
+  } catch (err) {
+    console.error("MongoDB Error:", err);
+    // Exit early - the app cannot function without DB
+    process.exit(1);
+  }
+}
 
 app.get("/", (_req, res) => {
   console.log("🔥 ROOT ROUTE HIT");
@@ -64,10 +78,13 @@ app.use("/api/sliders", sliderRoutes);
 app.use("/api/site-content", siteContentRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/wishlist", wishlistRoutes);
 
 const port = Number(process.env.PORT || 5000);
 
-app.listen(port, async () => {
-  console.log("Server running on port", port);
-  await initializeAI();
+start().then(() => {
+  app.listen(port, async () => {
+    console.log("Server running on port", port);
+    await initializeAI();
+  });
 });

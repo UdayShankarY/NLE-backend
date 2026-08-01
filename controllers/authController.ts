@@ -30,6 +30,7 @@ export const login = async (req: Request, res: Response) => {
       token,
       user: {
         id: String(user._id),
+        wishlist: Array.isArray(user.wishlist) ? user.wishlist.map((item) => String(item)) : [],
         name: [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email,
         firstName: user.firstName || email.split("@")[0],
         lastName: user.lastName || "",
