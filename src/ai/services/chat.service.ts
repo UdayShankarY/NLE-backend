@@ -38,7 +38,7 @@ class ChatService {
           },
         },
       },
-      { new: true }
+      { returnDocument: "after" }
     );
   }
 
@@ -61,7 +61,7 @@ class ChatService {
         messages: [],
       },
       {
-        new: true,
+        returnDocument: "after",
       }
     );
   }

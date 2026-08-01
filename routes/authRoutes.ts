@@ -16,14 +16,29 @@ const profileFields = [
 ] as const;
 
 function publicUser(user: any) {
-  return profileFields.reduce((profile, field) => {
-    profile[field] = user[field] || "";
-    return profile;
-  }, {
+  const email = typeof user.email === 'string' ? user.email.trim() : '';
+  const firstName = typeof user.firstName === 'string' ? user.firstName.trim() : '';
+  const lastName = typeof user.lastName === 'string' ? user.lastName.trim() : '';
+  const photoURL = typeof user.photoURL === 'string' ? user.photoURL.trim() : '';
+
+  return {
     id: String(user._id),
-    email: user.email,
-    role: user.role,
-  } as Record<string, unknown>);
+    email,
+    role: typeof user.role === 'string' ? user.role : 'user',
+    name: [firstName, lastName].filter(Boolean).join(' ') || email,
+    avatar: photoURL,
+    photoURL,
+    firstName,
+    lastName,
+    phone: typeof user.phone === 'string' ? user.phone.trim() : '',
+    gender: typeof user.gender === 'string' ? user.gender.trim() : '',
+    dateOfBirth: typeof user.dateOfBirth === 'string' ? user.dateOfBirth.trim() : '',
+    address: typeof user.address === 'string' ? user.address.trim() : '',
+    city: typeof user.city === 'string' ? user.city.trim() : '',
+    state: typeof user.state === 'string' ? user.state.trim() : '',
+    country: typeof user.country === 'string' ? user.country.trim() : '',
+    pincode: typeof user.pincode === 'string' ? user.pincode.trim() : '',
+  };
 }
 
 router.post("/login", login);
@@ -36,6 +51,17 @@ router.get("/profile", authMiddleware, async (req: Request, res: Response) => {
     return res.json({ user: publicUser(user) });
   } catch (err) {
     return res.status(500).json({ msg: "Failed to load profile" });
+  }
+});
+
+router.get("/me", authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as Request & { user?: { id?: string } }).user?.id;
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ msg: "User not found" });
+    return res.json({ user: publicUser(user) });
+  } catch (err) {
+    return res.status(500).json({ msg: "Failed to load current user" });
   }
 });
 
@@ -145,7 +171,8 @@ router.post("/google", async (req: Request, res: Response) => {
     res.json({
       token,
       user: {
-        id: user._id,
+        id: String(user._id),
+        name: [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email,
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
@@ -159,6 +186,7 @@ router.post("/google", async (req: Request, res: Response) => {
         country: user.country || "",
         pincode: user.pincode || "",
         photoURL: user.photoURL || "",
+        avatar: user.photoURL || "",
       },
     });
   } catch (err) {

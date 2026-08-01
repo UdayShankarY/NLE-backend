@@ -48,6 +48,7 @@ export class AIReindexService {
       console.log("[AI] Loading MongoDB");
       const documents = await mongoLoader.loadKnowledge();
       console.log("[AI] Documents Loaded:", documents.length);
+      console.log("[AI] Mongo Loader Refreshed");
 
       console.log("[AI] Splitting documents");
       const chunks = await textSplitterService.splitDocuments(documents);
@@ -57,13 +58,16 @@ export class AIReindexService {
 
       console.log("[AI] Replacing Vector Store");
       previousStore = vectorStoreService.replaceStore(newStore);
+      console.log("[AI] Vector Store Swapped");
 
       retrieverService.initialize(3);
       console.log("[AI] Retriever Refreshed");
 
       await queryAnalyzerService.refreshCategories();
+      console.log("[AI] Category Cache Refreshed");
 
       console.log("[AI] Reindex Completed");
+      console.log("[AI] AI Ready");
     } catch (error) {
       if (previousStore) {
         vectorStoreService.replaceStore(previousStore);

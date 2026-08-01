@@ -6,9 +6,9 @@ import { bookingHandler } from "../handlers/booking.handler";
 import { retrieveHandler } from "../handlers/retrieve.handler";
 import { recommendationHandler } from "../handlers/recommendation.handler";
 import { generalInformationHandler } from "../handlers/general-information.handler";
+import { categoryListHandler } from "../handlers/category-list.handler";
 import { queryAnalyzerService } from "../services/query-analyzer.service";
 import Product from "../../../models/Product";
-import { Document } from "@langchain/core/documents";
 
 export class IntentRouter {
   async route(
@@ -55,48 +55,12 @@ export class IntentRouter {
       console.log("[AI] Query Type: CATEGORY_LIST");
       console.log("[AI] Category:", analysis.category);
 
-      const categoryFilter = analysis.categoryId
-        ? { categoryId: analysis.categoryId }
-        : {
-            categoryName: {
-              $regex: this.toCategoryRegex(analysis.category ?? ""),
-              $options: "i",
-            },
-          };
-      const products = await Product.find({
-        ...categoryFilter,
-        active: true,
-      }).lean();
-
-      console.log("[AI] Mongo Products Returned:", products.length);
-
-      const documents = products.map(
-        (product) =>
-          new Document({
-            pageContent: [
-              `Decoration Name: ${product.name}`,
-              `Category: ${product.categoryName ?? ""}`,
-              `Price: ₹${product.price}`,
-              `Description: ${product.description ?? ""}`,
-              `Inclusions: ${(product.inclusions ?? []).join(", ")}`,
-            ].join("\n\n"),
-            metadata: {
-              collection: "products",
-              id: product._id.toString(),
-              slug: product._id.toString(),
-              name: product.name,
-              image: product.image,
-              category: product.categoryName,
-              categoryId: product.categoryId?.toString(),
-              price: product.price,
-              featured: product.featured,
-              description: product.description ?? "",
-              active: product.active,
-            },
-          })
+      return categoryListHandler.handle(
+        message,
+        sessionId,
+        analysis.category,
+        analysis.categoryId
       );
-
-      return recommendationHandler.handle(message, sessionId, documents);
     }
 
     console.log("[AI] Query Type: SEMANTIC_SEARCH");

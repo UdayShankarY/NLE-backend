@@ -29,7 +29,8 @@ export const login = async (req: Request, res: Response) => {
     res.json({
       token,
       user: {
-        id: user._id,
+        id: String(user._id),
+        name: [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email,
         firstName: user.firstName || email.split("@")[0],
         lastName: user.lastName || "",
         email: user.email,
@@ -43,6 +44,7 @@ export const login = async (req: Request, res: Response) => {
         country: user.country || "",
         pincode: user.pincode || "",
         photoURL: user.photoURL || "",
+        avatar: user.photoURL || "",
       },
     });
   } catch (err) {
