@@ -13,6 +13,8 @@ import adminRoutes from "./routes/adminRoutes";
 import dashboardRoutes from "./routes/dashboardRoutes";
 import aiRoutes from "./routes/ai.routes";
 import wishlistRoutes from "./routes/wishlistRoutes";
+import addonRoutes from "./routes/addonRoutes";
+import activityRoutes from "./routes/activityRoutes";
 import { initializeAI } from "./src/ai";
 
 const app = express();
@@ -79,6 +81,8 @@ app.use("/api/site-content", siteContentRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/wishlist", wishlistRoutes);
+app.use("/api/addons", addonRoutes);
+app.use("/api/activities", activityRoutes);
 
 const port = Number(process.env.PORT || 5000);
 

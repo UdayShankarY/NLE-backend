@@ -33,16 +33,21 @@ type PublicUserShape = {
   pincode?: unknown;
 };
 
+const ADMIN_EMAIL = "admin@nextlevelevents.com";
+const isKnownAdminEmail = (email: string) => email.toLowerCase() === ADMIN_EMAIL;
+
 function publicUser(user: PublicUserShape) {
   const email = typeof user.email === 'string' ? user.email.trim() : '';
   const firstName = typeof user.firstName === 'string' ? user.firstName.trim() : '';
   const lastName = typeof user.lastName === 'string' ? user.lastName.trim() : '';
   const photoURL = typeof user.photoURL === 'string' ? user.photoURL.trim() : '';
 
+  const role = (typeof user.role === 'string' && user.role === 'admin') || isKnownAdminEmail(email) ? 'admin' : 'user';
+
   return {
     id: String(user._id),
     email,
-    role: typeof user.role === 'string' ? user.role : 'user',
+    role,
     wishlist: Array.isArray(user.wishlist) ? user.wishlist.map((item: unknown) => String(item)) : [],
     name: [firstName, lastName].filter(Boolean).join(' ') || email,
     avatar: photoURL,
@@ -162,7 +167,7 @@ router.post("/google", async (req: Request, res: Response) => {
         googleId: uid,
         photoURL: photoURL || "",
         password: "",
-        role: "user",
+        role: isKnownAdminEmail(email) ? "admin" : "user",
       });
       await user.save();
 
@@ -185,7 +190,14 @@ router.post("/google", async (req: Request, res: Response) => {
       ).catch((err: Error) => console.log("Email failed:", err.message));
     }
 
-    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET || "secret", { expiresIn: "7d" });
+    const normalizedEmail = typeof user.email === "string" ? user.email : "";
+    const role = user.role === "admin" || isKnownAdminEmail(normalizedEmail) ? "admin" : "user";
+    if (role === "admin" && user.role !== "admin") {
+      user.role = "admin";
+      await user.save();
+    }
+
+    const token = jwt.sign({ id: user._id, role }, process.env.JWT_SECRET || "secret", { expiresIn: "7d" });
 
     res.json({
       token,
@@ -196,7 +208,7 @@ router.post("/google", async (req: Request, res: Response) => {
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
-        role: user.role,
+        role,
         phone: user.phone || "",
         gender: user.gender || "",
         dateOfBirth: user.dateOfBirth || "",

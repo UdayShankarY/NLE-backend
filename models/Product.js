@@ -20,6 +20,10 @@ const ProductSchema = new mongoose.Schema({
   originalPrice: Number,
   description: String,
   inclusions: [String],
+  addons: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Addon"
+  }],
   addOns: [{
     name: String,
     price: Number

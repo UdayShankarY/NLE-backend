@@ -1,13 +1,22 @@
 import express, { Request, Response } from "express";
 import Category from "../models/Category";
+import Product from "../models/Product";
 import { aiReindexService } from "../src/ai/services/ai-reindex.service";
 
 const router = express.Router();
 
 router.get("/", async (_req: Request, res: Response) => {
   try {
-    const categories = await Category.find();
-    res.json(categories);
+    const categories = await Category.find().lean();
+    const counts = await Product.aggregate([
+      { $group: { _id: "$categoryId", count: { $sum: 1 } } }
+    ]);
+    const countMap = new Map(counts.map((item: any) => [String(item._id), item.count]));
+    const categoriesWithCounts = categories.map((category: any) => ({
+      ...category,
+      productCount: countMap.get(String(category._id)) || 0,
+    }));
+    res.json(categoriesWithCounts);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
