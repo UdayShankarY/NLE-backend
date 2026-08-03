@@ -15,6 +15,8 @@ import aiRoutes from "./routes/ai.routes";
 import wishlistRoutes from "./routes/wishlistRoutes";
 import addonRoutes from "./routes/addonRoutes";
 import activityRoutes from "./routes/activityRoutes";
+import catalogRoutes from "./routes/catalogRoutes";
+import orderRoutes from "./routes/orderRoutes";
 import { initializeAI } from "./src/ai";
 
 const app = express();
@@ -83,6 +85,8 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/wishlist", wishlistRoutes);
 app.use("/api/addons", addonRoutes);
 app.use("/api/activities", activityRoutes);
+app.use("/api/catalog", catalogRoutes);
+app.use("/api/orders", orderRoutes);
 
 const port = Number(process.env.PORT || 5000);
 

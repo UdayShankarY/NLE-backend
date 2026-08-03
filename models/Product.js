@@ -28,6 +28,10 @@ const ProductSchema = new mongoose.Schema({
     name: String,
     price: Number
   }],
+  activities: {
+    type: [mongoose.Schema.Types.Mixed],
+    default: []
+  },
   image: {
     type: String,
     required: true

@@ -11,22 +11,25 @@ const razorpay = new Razorpay({
 
 router.post("/create-order", async (req: Request, res: Response) => {
   try {
-    const { amount } = req.body;
+    const { amount, receipt, notes } = req.body;
 
     if (!amount) {
       return res.status(400).json({ error: "Amount is required" });
     }
 
     const options = {
-      amount: amount * 100,
+      amount: Math.round(Number(amount) * 100),
       currency: "INR",
-      receipt: `receipt_${Date.now()}`,
+      receipt: receipt || `receipt_${Date.now()}`,
+      notes: notes || {},
     };
 
     const hasValidKeys =
-      process.env.RAZORPAY_KEY_ID &&
+      typeof process.env.RAZORPAY_KEY_ID === "string" &&
+      process.env.RAZORPAY_KEY_ID.trim().length > 0 &&
       !process.env.RAZORPAY_KEY_ID.includes("x") &&
-      process.env.RAZORPAY_KEY_SECRET &&
+      typeof process.env.RAZORPAY_KEY_SECRET === "string" &&
+      process.env.RAZORPAY_KEY_SECRET.trim().length > 0 &&
       !process.env.RAZORPAY_KEY_SECRET.includes("x");
 
     if (!hasValidKeys) {
