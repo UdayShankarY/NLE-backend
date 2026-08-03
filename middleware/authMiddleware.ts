@@ -12,9 +12,8 @@ export default function authMiddleware(req: Request, res: Response, next: NextFu
     const decoded = jwt.verify(token, process.env.JWT_SECRET || "secret");
 
     (req as Request & { user?: unknown }).user = decoded;
-
     next();
-  } catch {
+  } catch (err) {
     res.status(401).json({ msg: "Invalid token" });
   }
 }
