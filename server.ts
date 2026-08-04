@@ -31,6 +31,8 @@ interface ProductShareData {
   image?: string;
 }
 
+console.log("===== SHARE ROUTE BUILD v2 =====");
+
 const backendRootPath = fs.existsSync(path.join(__dirname, "server.ts")) ? __dirname : path.resolve(__dirname, "..");
 const candidateFrontendRoots = [
   path.resolve(backendRootPath, "frontend"),
