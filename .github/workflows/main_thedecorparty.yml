@@ -31,19 +31,8 @@ jobs:
         run: npm run build
 
       # Frontend
-      - name: Install frontend dependencies
-        working-directory: frontend
-        run: npm install --legacy-peer-deps
-
-      - name: Build frontend
-        working-directory: frontend
-        run: npm run build
-
-      # Copy frontend build into backend
-      - name: Copy frontend build
-        run: |
-          mkdir -p backend/frontend
-          cp -R frontend/dist backend/frontend/
+      # If frontend is maintained in a separate repository, do NOT build or copy it here.
+      # The backend must be independent and should not package frontend assets.
 
       # Upload backend (including frontend build)
       - name: Upload artifact
