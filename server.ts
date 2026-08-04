@@ -23,6 +23,14 @@ import { initializeAI } from "./src/ai";
 import Product from "./models/Product";
 
 const app = express();
+
+interface ProductShareData {
+  _id?: string;
+  name?: string;
+  description?: string;
+  image?: string;
+}
+
 const backendRootPath = fs.existsSync(path.join(__dirname, "server.ts")) ? __dirname : path.resolve(__dirname, "..");
 const candidateFrontendRoots = [
   path.resolve(backendRootPath, "frontend"),
@@ -53,6 +61,48 @@ const escapeHtml = (value: string) =>
     .replace(/>/g, "&gt;")
     .replace(/\"/g, "&quot;")
     .replace(/'/g, "&#39;");
+
+const buildProductSharePage = (req: Request, product: ProductShareData | null) => {
+  const baseUrl = process.env.FRONTEND_URL || process.env.PUBLIC_URL || "https://www.thedecorparty.com";
+  const normalizedBaseUrl = baseUrl.replace(/\/$/, "");
+  const productId = product?._id ? String(product._id) : "";
+  const productUrl = productId ? `${normalizedBaseUrl}/product/${productId}` : `${normalizedBaseUrl}/products`;
+  const title = product?.name || "TheDecorParty";
+  const description = product?.description || defaultSeoDescription;
+  const image = product?.image || `${normalizedBaseUrl}/og-default.jpg`;
+
+  const escapedTitle = escapeHtml(title);
+  const escapedDescription = escapeHtml(description);
+  const escapedImage = escapeHtml(image);
+  const escapedUrl = escapeHtml(productUrl);
+
+  return `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>${escapedTitle}</title>
+    <meta name="description" content="${escapedDescription}" />
+    <meta property="og:title" content="${escapedTitle}" />
+    <meta property="og:description" content="${escapedDescription}" />
+    <meta property="og:image" content="${escapedImage}" />
+    <meta property="og:url" content="${escapedUrl}" />
+    <meta property="og:type" content="product" />
+    <meta property="og:site_name" content="TheDecorParty" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="${escapedTitle}" />
+    <meta name="twitter:description" content="${escapedDescription}" />
+    <meta name="twitter:image" content="${escapedImage}" />
+    <link rel="canonical" href="${escapedUrl}" />
+    <meta http-equiv="refresh" content="1;url=${escapedUrl}" />
+    <script>
+      window.location.replace(${JSON.stringify(productUrl)});
+    </script>
+  </head>
+  <body>
+    Redirecting to product...
+  </body>
+</html>`;
+};
 
 const getIndexTemplatePath = () => {
   if (fs.existsSync(frontendIndexPath)) {
@@ -155,7 +205,7 @@ const renderFrontendShell = async (req: Request, res: Response, next: NextFuncti
   const html = fs.readFileSync(indexPath, "utf8");
   const seo = buildSeoTemplate(req, product);
   const updatedHtml = injectSeoTagsIntoHtml(html, seo);
-
+console.log(updatedHtml.includes("__OG_TITLE__"));
   return res.type("html").send(updatedHtml);
 };
 
@@ -212,6 +262,24 @@ app.get("/api/health", (_req: Request, res: Response) => {
   });
 });
 
+app.get("/share/product/:productId", async (req: Request, res: Response) => {
+  console.log("[SHARE] Request", req.originalUrl);
+
+  const productId = req.params.productId;
+  const product = await Product.findById(productId).lean<ProductShareData | null>();
+
+  if (!product) {
+    console.log("[SHARE] Product Missing", productId);
+    res.status(404).type("html").send("<!DOCTYPE html><html><body>Product not found</body></html>");
+    return;
+  }
+
+  console.log("[SHARE] Product Found", productId);
+  const html = buildProductSharePage(req, product);
+  console.log("[SHARE] Generated Share Page", productId);
+  res.type("html").send(html);
+});
+
 app.use("/api/ai", aiRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/payment", paymentRoutes);
@@ -244,8 +312,7 @@ if (fs.existsSync(frontendDistPath)) {
   app.use(express.static(frontendDistPath));
 }
 
-app.get("/:path", renderFrontendShell);
-
+app.get(/.*/, renderFrontendShell);
 const port = Number(process.env.PORT || 5000);
 
 start().then(() => {
