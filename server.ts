@@ -23,11 +23,28 @@ import { initializeAI } from "./src/ai";
 import Product from "./models/Product";
 
 const app = express();
-const frontendRootPath = path.resolve(__dirname, "../frontend");
-const frontendDistPath = path.resolve(__dirname, "../frontend/dist");
+const backendRootPath = fs.existsSync(path.join(__dirname, "server.ts")) ? __dirname : path.resolve(__dirname, "..");
+const candidateFrontendRoots = [
+  path.resolve(backendRootPath, "frontend"),
+  path.resolve(backendRootPath, "dist", "frontend"),
+  path.resolve(__dirname, "..", "frontend"),
+  path.resolve(__dirname, "..", "dist", "frontend"),
+  path.resolve(__dirname, "..", "..", "frontend"),
+  path.resolve(__dirname, "..", "..", "backend", "frontend"),
+].filter((value, index, array) => array.indexOf(value) === index);
+const frontendRootPath = candidateFrontendRoots.find((candidate) => fs.existsSync(path.join(candidate, "index.html"))) || candidateFrontendRoots[0] || path.resolve(backendRootPath, "frontend");
+const frontendDistPath = path.join(frontendRootPath, "dist");
 const frontendIndexPath = path.join(frontendDistPath, "index.html");
 const frontendSourceIndexPath = path.join(frontendRootPath, "index.html");
 const defaultSeoDescription = "Premium surprise and decoration experiences curated for every celebration.";
+
+const logSeoPaths = () => {
+  console.log("[SEO] backendRootPath", backendRootPath);
+  console.log("[SEO] frontendRootPath", frontendRootPath);
+  console.log("[SEO] frontendDistPath", frontendDistPath);
+  console.log("[SEO] frontendIndexPath", frontendIndexPath, "exists=", fs.existsSync(frontendIndexPath));
+  console.log("[SEO] frontendSourceIndexPath", frontendSourceIndexPath, "exists=", fs.existsSync(frontendSourceIndexPath));
+};
 
 const escapeHtml = (value: string) =>
   String(value ?? "")
@@ -38,12 +55,12 @@ const escapeHtml = (value: string) =>
     .replace(/'/g, "&#39;");
 
 const getIndexTemplatePath = () => {
-  if (fs.existsSync(frontendSourceIndexPath)) {
-    return frontendSourceIndexPath;
-  }
-
   if (fs.existsSync(frontendIndexPath)) {
     return frontendIndexPath;
+  }
+
+  if (fs.existsSync(frontendSourceIndexPath)) {
+    return frontendSourceIndexPath;
   }
 
   return frontendSourceIndexPath;
@@ -67,18 +84,57 @@ const buildSeoTemplate = (req: Request, product: any | null) => {
   };
 };
 
+const injectSeoTagsIntoHtml = (html: string, seo: ReturnType<typeof buildSeoTemplate>) => {
+  const hasPlaceholders = html.includes("__OG_TITLE__") || html.includes("__OG_DESCRIPTION__") || html.includes("__OG_IMAGE__") || html.includes("__OG_URL__");
+
+  if (hasPlaceholders) {
+    return html
+      .replace(/__OG_TITLE__/g, seo.title)
+      .replace(/__OG_DESCRIPTION__/g, seo.description)
+      .replace(/__OG_IMAGE__/g, seo.image)
+      .replace(/__OG_URL__/g, seo.url);
+  }
+
+  const headInjection = `
+    <title>${seo.title}</title>
+    <meta name="description" content="${seo.description}" />
+    <meta property="og:title" content="${seo.title}" />
+    <meta property="og:description" content="${seo.description}" />
+    <meta property="og:image" content="${seo.image}" />
+    <meta property="og:url" content="${seo.url}" />
+    <meta property="og:type" content="product" />
+    <meta property="og:site_name" content="TheDecorParty" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="${seo.title}" />
+    <meta name="twitter:description" content="${seo.description}" />
+    <meta name="twitter:image" content="${seo.image}" />
+    <link rel="canonical" href="${seo.url}" />`;
+
+  if (html.includes("</head>")) {
+    return html.replace(/<\/head>/i, `${headInjection}\n</head>`);
+  }
+
+  return html;
+};
+
 const renderFrontendShell = async (req: Request, res: Response, next: NextFunction) => {
+  console.log("[SEO] request", req.method, req.originalUrl, "path=", req.path);
+
   if (req.path.startsWith("/api/")) {
+    console.log("[SEO] skip: api route");
     return next();
   }
 
   if (req.path.startsWith("/assets/") || req.path.includes(".")) {
+    console.log("[SEO] skip: asset route");
     return next();
   }
 
   const indexPath = getIndexTemplatePath();
+  console.log("[SEO] selected template", indexPath);
 
   if (!fs.existsSync(indexPath)) {
+    console.log("[SEO] skip: template missing");
     return next();
   }
 
@@ -89,6 +145,7 @@ const renderFrontendShell = async (req: Request, res: Response, next: NextFuncti
     if (productId) {
       try {
         product = await Product.findById(productId).lean();
+        console.log("[SEO] product lookup", productId, product ? "found" : "missing");
       } catch (error) {
         console.error("Product SEO lookup failed", error);
       }
@@ -97,13 +154,7 @@ const renderFrontendShell = async (req: Request, res: Response, next: NextFuncti
 
   const html = fs.readFileSync(indexPath, "utf8");
   const seo = buildSeoTemplate(req, product);
-  console.log("SEO index path", indexPath);
-  console.log("SEO placeholders present", html.includes("__OG_TITLE__"));
-  const updatedHtml = html
-    .replace(/__OG_TITLE__/g, seo.title)
-    .replace(/__OG_DESCRIPTION__/g, seo.description)
-    .replace(/__OG_IMAGE__/g, seo.image)
-    .replace(/__OG_URL__/g, seo.url);
+  const updatedHtml = injectSeoTagsIntoHtml(html, seo);
 
   return res.type("html").send(updatedHtml);
 };
@@ -176,6 +227,11 @@ app.use("/api/activities", activityRoutes);
 app.use("/api/catalog", catalogRoutes);
 app.use("/api/orders", orderRoutes);
 
+app.get("/product/:productId", (req, res, next) => {
+  console.log("[SEO] registered product route", req.originalUrl);
+  return renderFrontendShell(req, res, next);
+});
+
 app.use((req, res, next) => {
   if (req.method === "GET" && /^\/product\/[^/]+\/?$/.test(req.path)) {
     return renderFrontendShell(req, res, next);
@@ -188,9 +244,6 @@ if (fs.existsSync(frontendDistPath)) {
   app.use(express.static(frontendDistPath));
 }
 
-app.get("/product/:productId", (req, res, next) => {
-  return renderFrontendShell(req, res, next);
-});
 app.get("/:path", renderFrontendShell);
 
 const port = Number(process.env.PORT || 5000);
@@ -198,6 +251,7 @@ const port = Number(process.env.PORT || 5000);
 start().then(() => {
   app.listen(port, async () => {
     console.log("Server running on port", port);
+    logSeoPaths();
     await initializeAI();
   });
 });

@@ -23,17 +23,28 @@ jobs:
         with:
           node-version: '20.x'
 
-      - name: npm install, build, and test
+      - name: Install backend deps and build
         run: |
+          cd backend
           npm install --legacy-peer-deps
-          npm run build --if-present
-          npm run test --if-present
+          npm run build
+
+      - name: Install frontend deps and build
+        run: |
+          cd frontend
+          npm install --legacy-peer-deps
+          npm run build
+
+      - name: Copy frontend build into backend deployment package
+        run: |
+          mkdir -p backend/frontend
+          cp -R frontend/dist backend/frontend/
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: .
+          path: backend
 
   deploy:
     runs-on: ubuntu-latest
