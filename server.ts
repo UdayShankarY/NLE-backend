@@ -265,21 +265,48 @@ app.get("/api/health", (_req: Request, res: Response) => {
 });
 
 app.get("/share/product/:productId", async (req: Request, res: Response) => {
-  console.log("[SHARE] Request", req.originalUrl);
+  console.log("==================================");
+  console.log("[SHARE] ROUTE START");
+  console.log("[SHARE] URL:", req.originalUrl);
+  console.log("[SHARE] Product ID:", req.params.productId);
 
-  const productId = req.params.productId;
-  const product = await Product.findById(productId).lean<ProductShareData | null>();
+  try {
+    const productId = req.params.productId;
 
-  if (!product) {
-    console.log("[SHARE] Product Missing", productId);
-    res.status(404).type("html").send("<!DOCTYPE html><html><body>Product not found</body></html>");
-    return;
+    console.log("[SHARE] Looking up product...");
+
+    const product = await Product.findById(productId).lean<ProductShareData | null>();
+
+    console.log("[SHARE] Lookup completed");
+
+    if (!product) {
+      console.log("[SHARE] PRODUCT NOT FOUND:", productId);
+      return res
+        .status(404)
+        .type("html")
+        .send("<!DOCTYPE html><html><body>Product not found</body></html>");
+    }
+
+    console.log("[SHARE] PRODUCT FOUND");
+    console.log("[SHARE] Name:", product.name);
+    console.log("[SHARE] Image:", product.image);
+
+    const html = buildProductSharePage(req, product);
+
+    console.log("[SHARE] HTML Generated");
+    console.log("[SHARE] Sending response");
+
+    return res.type("html").send(html);
+  } catch (err) {
+    console.error("==================================");
+    console.error("[SHARE] ERROR");
+    console.error(err);
+
+    return res.status(500).send(`
+      <h1>Share Route Error</h1>
+      <pre>${String(err)}</pre>
+    `);
   }
-
-  console.log("[SHARE] Product Found", productId);
-  const html = buildProductSharePage(req, product);
-  console.log("[SHARE] Generated Share Page", productId);
-  res.type("html").send(html);
 });
 
 app.use("/api/ai", aiRoutes);
