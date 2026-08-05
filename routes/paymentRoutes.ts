@@ -1,6 +1,7 @@
 import express, { Request, Response } from "express";
 import Razorpay from "razorpay";
 import crypto from "crypto";
+import axios from "axios";
 import "dotenv/config";
 import Order from "../models/Order";
 
@@ -40,7 +41,7 @@ router.post("/create-order", async (req: Request, res: Response) => {
     }
 
     const options = {
-      amount: Math.round(Number(amount) * 100), // Convert Rupees -> Paise
+      amount: Math.round(Number(amount) * 100),
       currency: "INR",
       receipt: receipt || `receipt_${Date.now()}`,
       notes: notes || {},
@@ -61,7 +62,10 @@ router.post("/create-order", async (req: Request, res: Response) => {
 
     return res.status(500).json({
       success: false,
-      message: error?.error?.description || error?.message || "Unable to create order",
+      message:
+        error?.error?.description ||
+        error?.message ||
+        "Unable to create order",
       error,
     });
   }
@@ -97,10 +101,7 @@ router.post("/verify", async (req: Request, res: Response) => {
     }
 
     const generatedSignature = crypto
-      .createHmac(
-        "sha256",
-        process.env.RAZORPAY_KEY_SECRET as string
-      )
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET as string)
       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
       .digest("hex");
 
@@ -112,13 +113,11 @@ router.post("/verify", async (req: Request, res: Response) => {
     }
 
     if (razorpay_payment_id) {
-      const existingOrder = await Order.findOne({ razorpayPaymentId: razorpay_payment_id });
+      const existingOrder = await Order.findOne({
+        razorpayPaymentId: razorpay_payment_id,
+      });
+
       if (existingOrder) {
-        console.log("[payment] verification reused existing order", {
-          orderId: existingOrder._id,
-          orderNumber: existingOrder.orderNumber,
-          razorpayPaymentId: razorpay_payment_id,
-        });
         return res.status(200).json({
           success: true,
           message: "Payment verified successfully",
@@ -138,13 +137,57 @@ router.post("/verify", async (req: Request, res: Response) => {
       };
 
       console.log("[payment] saving verified order payload", payload);
+
       const order = new Order(payload);
       await order.save();
+
       console.log("[payment] verified order saved", {
         orderId: order._id,
         orderNumber: order.orderNumber,
         userId: order.userId,
       });
+
+      // =============================
+      // Send booking to n8n
+      // =============================
+      try {
+  await axios.post(process.env.N8N_WEBHOOK_URL!,
+  {
+    orderNumber: order.orderNumber,
+    orderId: order._id,
+
+    // ✅ ADD THIS
+    customer: order.customer,
+
+    productId: order.productId,
+    productName: order.productName,
+    categoryName: order.categoryName,
+    subcategory: order.subcategory,
+
+    packagePrice: order.packagePrice,
+    amount: order.amount,
+
+    paymentMethod: order.paymentMethod,
+    paymentStatus: order.paymentStatus,
+
+    bookingDetails: order.bookingDetails,
+
+    addons: order.addons,
+    activities: order.activities,
+
+    razorpayOrderId: order.razorpayOrderId,
+    razorpayPaymentId: order.razorpayPaymentId,
+    razorpaySignature: order.razorpaySignature,
+
+    createdAt: order.createdAt,
+  }
+);
+
+  console.log("✅ Booking sent to n8n");
+} catch (err: any) {
+  console.error("❌ Failed to send booking to n8n");
+  console.error(err?.response?.data || err.message);
+}
       return res.status(200).json({
         success: true,
         message: "Payment verified successfully",
