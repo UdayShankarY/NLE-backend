@@ -200,6 +200,11 @@ function buildEmailHtml(order: any) {
 }
 
 async function notifyOrderChannels(order: any) {
+  console.log("======================================");
+console.log("INSIDE notifyOrderChannels()");
+console.log("Order Number:", order.orderNumber);
+console.log("Customer:", order.customer?.name);
+console.log("======================================");
   const customerEmail = order.customer?.email;
 
   if (customerEmail) {
@@ -333,16 +338,31 @@ router.post("/", async (req: Request, res: Response) => {
     console.log(order.addonTotal);
 
     await order.save();
-    console.log("[orders] ORDER SAVE SUCCESS", {
-      orderId: order._id,
-      orderNumber: order.orderNumber,
-      userId: order.userId,
-      customerId: order.customerId,
-      paymentStatus: order.paymentStatus,
-    });
-    console.log("[orders] ORDER ID", order._id);
-    void notifyOrderChannels(order).catch((err) => console.error("Order notification failed:", err));
-    res.status(201).json(order);
+
+console.log("[orders] ORDER SAVE SUCCESS", {
+  orderId: order._id,
+  orderNumber: order.orderNumber,
+  userId: order.userId,
+  customerId: order.customerId,
+  paymentStatus: order.paymentStatus,
+});
+
+console.log("[orders] ORDER ID", order._id);
+
+console.log("======================================");
+console.log("Calling notifyOrderChannels()");
+console.log("======================================");
+
+try {
+  await notifyOrderChannels(order);
+  console.log("notifyOrderChannels() SUCCESS");
+} catch (err) {
+  console.error("notifyOrderChannels() FAILED");
+  console.error(err);
+}
+
+res.status(201).json(order);
+
   } catch (err: unknown) {
     console.error("[orders] ORDER SAVE FAILED", err);
     const message = err instanceof Error ? err.message : "Unable to create the booking order.";

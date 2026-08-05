@@ -1,6 +1,9 @@
 import "dotenv/config";
 
 export async function postOrderToN8n(order: any) {
+  console.log("🚀 Sending booking to n8n");
+console.log("Webhook URL:", process.env.N8N_WEBHOOK_URL);
+console.log("Payload:", JSON.stringify(order, null, 2));
   const webhookUrl = process.env.N8N_WEBHOOK_URL;
 
   if (!webhookUrl) {
