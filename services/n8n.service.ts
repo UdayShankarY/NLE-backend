@@ -8,6 +8,8 @@ export async function postOrderToN8n(order: any) {
   }
 
   try {
+    console.log("Sending order to:", webhookUrl);
+  console.log("Order:", JSON.stringify(order));
     const response = await fetch(webhookUrl, {
       method: "POST",
       headers: {
@@ -15,6 +17,10 @@ export async function postOrderToN8n(order: any) {
       },
       body: JSON.stringify(order),
     });
+
+  console.log("n8n response status:", response.status);
+  const text = await response.text();
+console.log("n8n response:", text);
 
     if (!response.ok) {
       const body = await response.text().catch(() => "");
