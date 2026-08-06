@@ -49,9 +49,16 @@ router.put("/reorder", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "orderedIds must be a non-empty array" });
     }
 
+    const validIds = orderedIds.filter(
+      (id) => typeof id === "string" && id.trim().length > 0 && id !== "undefined" && id !== "null"
+    );
+
     await Promise.all(
-      orderedIds.map((id: string, index: number) =>
-        Category.findByIdAndUpdate(id, { order: index }, { new: true })
+      validIds.map((id: string, index: number) =>
+        Category.findByIdAndUpdate(id, { order: index }, { new: true }).catch((err) => {
+          console.error(`Failed to update order for category ID ${id}:`, err);
+          return null;
+        })
       )
     );
 
