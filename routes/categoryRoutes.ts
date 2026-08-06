@@ -1,4 +1,5 @@
 import express, { Request, Response } from "express";
+import mongoose from "mongoose";
 import Category from "../models/Category";
 import Product from "../models/Product";
 import { aiReindexService } from "../src/ai/services/ai-reindex.service";
@@ -42,7 +43,7 @@ router.post("/", async (req: Request, res: Response) => {
   }
 });
 
-router.put("/reorder", async (req: Request, res: Response) => {
+const handleReorder = async (req: Request, res: Response) => {
   try {
     const { orderedIds } = req.body;
     if (!Array.isArray(orderedIds) || orderedIds.length === 0) {
@@ -68,14 +69,24 @@ router.put("/reorder", async (req: Request, res: Response) => {
       console.warn("AI reindex failed during category reorder:", aiErr);
     }
 
-    res.json({ message: "Category order updated successfully" });
+    return res.json({ message: "Category order updated successfully" });
   } catch (err: any) {
     console.error("Error in /api/categories/reorder:", err);
-    res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: err.message });
   }
-});
+};
+
+router.put("/reorder", handleReorder);
 
 router.put("/:id", async (req: Request, res: Response) => {
+  if (req.params.id === "reorder") {
+    return handleReorder(req, res);
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return res.status(400).json({ error: "Invalid category ID format" });
+  }
+
   try {
     const updated = await Category.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (updated) {
