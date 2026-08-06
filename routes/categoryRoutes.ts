@@ -45,22 +45,25 @@ router.post("/", async (req: Request, res: Response) => {
 router.put("/reorder", async (req: Request, res: Response) => {
   try {
     const { orderedIds } = req.body;
-    if (!Array.isArray(orderedIds)) {
-      return res.status(400).json({ error: "orderedIds must be an array" });
+    if (!Array.isArray(orderedIds) || orderedIds.length === 0) {
+      return res.status(400).json({ error: "orderedIds must be a non-empty array" });
     }
 
-    const bulkOps = orderedIds.map((id: string, index: number) => ({
-      updateOne: {
-        filter: { _id: id },
-        update: { order: index },
-      },
-    }));
+    await Promise.all(
+      orderedIds.map((id: string, index: number) =>
+        Category.findByIdAndUpdate(id, { order: index }, { new: true })
+      )
+    );
 
-    await Category.bulkWrite(bulkOps);
-    aiReindexService.scheduleReindex();
+    try {
+      aiReindexService.scheduleReindex();
+    } catch (aiErr) {
+      console.warn("AI reindex failed during category reorder:", aiErr);
+    }
 
     res.json({ message: "Category order updated successfully" });
   } catch (err: any) {
+    console.error("Error in /api/categories/reorder:", err);
     res.status(500).json({ error: err.message });
   }
 });
