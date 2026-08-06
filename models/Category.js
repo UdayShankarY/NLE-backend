@@ -22,6 +22,10 @@ const CategorySchema = new mongoose.Schema({
     unique: true
   },
   active: Boolean,
+  order: {
+    type: Number,
+    default: 0
+  },
   productCount: {
     type: Number,
     default: 0

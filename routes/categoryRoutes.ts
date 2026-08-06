@@ -7,7 +7,7 @@ const router = express.Router();
 
 router.get("/", async (_req: Request, res: Response) => {
   try {
-    const categories = await Category.find().lean();
+    const categories = await Category.find().sort({ order: 1, _id: 1 }).lean();
     const counts = await Product.aggregate([
       { $group: { _id: "$categoryId", count: { $sum: 1 } } }
     ]);
@@ -31,11 +31,35 @@ router.post("/", async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Category already exists" });
     }
 
-    const category = new Category(req.body);
+    const count = await Category.countDocuments();
+    const category = new Category({ ...req.body, order: count });
     await category.save();
     aiReindexService.scheduleReindex();
 
     res.json(category);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.put("/reorder", async (req: Request, res: Response) => {
+  try {
+    const { orderedIds } = req.body;
+    if (!Array.isArray(orderedIds)) {
+      return res.status(400).json({ error: "orderedIds must be an array" });
+    }
+
+    const bulkOps = orderedIds.map((id: string, index: number) => ({
+      updateOne: {
+        filter: { _id: id },
+        update: { order: index },
+      },
+    }));
+
+    await Category.bulkWrite(bulkOps);
+    aiReindexService.scheduleReindex();
+
+    res.json({ message: "Category order updated successfully" });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
