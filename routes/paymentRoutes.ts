@@ -1,4 +1,5 @@
 import express, { Request, Response } from "express";
+import mongoose from "mongoose";
 import Razorpay from "razorpay";
 import crypto from "crypto";
 import axios from "axios";
@@ -141,11 +142,12 @@ router.post("/verify", async (req: Request, res: Response) => {
     }
 
     if (orderPayload) {
-      const authUserId = getAuthenticatedUserId(req) || orderPayload.userId || orderPayload.customer?.id;
+      const rawUserId = getAuthenticatedUserId(req) || orderPayload.userId || orderPayload.customer?.id;
+      const validUserId = (rawUserId && mongoose.Types.ObjectId.isValid(String(rawUserId))) ? String(rawUserId) : undefined;
       const payload = {
         ...orderPayload,
-        userId: authUserId || undefined,
-        customerId: authUserId || orderPayload.customerId || orderPayload.customer?.id || undefined,
+        userId: validUserId,
+        customerId: orderPayload.customerId || orderPayload.customer?.id || (validUserId ? String(validUserId) : undefined),
         paymentStatus: "paid",
         paymentMethod: "razorpay",
         razorpayOrderId: razorpay_order_id,

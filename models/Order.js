@@ -227,40 +227,22 @@ OrderSchema.pre("save", async function () {
         ? Number(highestExistingOrder.orderNumber.replace(/^TDP/, ""))
         : 0;
 
-      const counter = await Counter.findOneAndUpdate(
+      let counter = await Counter.findOneAndUpdate(
         { _id: "order" },
-        [
-          {
-            $set: {
-              seq: {
-                $max: [
-                  { $ifNull: ["$seq", 0] },
-                  highestExistingSequence,
-                ],
-              },
-            },
-          },
-          {
-            $set: {
-              seq: {
-                $add: ["$seq", 1],
-              },
-            },
-          },
-        ],
-        {
-          upsert: true,
-          setDefaultsOnInsert: true,
-          returnDocument: "after",
-          updatePipeline: true,
-        }
+        { $inc: { seq: 1 } },
+        { new: true, upsert: true }
       );
 
-      if (!counter || typeof counter.seq !== "number") {
-        throw new Error("Unable to generate order number counter");
+      if (counter && counter.seq <= highestExistingSequence) {
+        counter = await Counter.findOneAndUpdate(
+          { _id: "order" },
+          { $set: { seq: highestExistingSequence + 1 } },
+          { new: true, upsert: true }
+        );
       }
 
-      this.orderNumber = `TDP${String(counter.seq).padStart(6, "0")}`;
+      const seqNumber = counter ? counter.seq : (highestExistingSequence + 1);
+      this.orderNumber = `TDP${String(seqNumber).padStart(6, "0")}`;
     }
 
     if (this.isNew && (!this.statusHistory || this.statusHistory.length === 0)) {

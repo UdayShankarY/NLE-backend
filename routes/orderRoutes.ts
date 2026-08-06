@@ -1,4 +1,5 @@
 import express, { Request, Response } from "express";
+import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 import Order from "../models/Order";
 import sendEmail from "../utils/sendEmail";
@@ -306,9 +307,12 @@ router.post("/", async (req: Request, res: Response) => {
 
     const initialOrderStatus = normalizeOrderStatus(req.body.orderStatus || "Pending");
 
+    const rawUserId = getAuthenticatedUserId(req) || req.body.userId || req.body.customer?.id;
+    const validUserId = (rawUserId && mongoose.Types.ObjectId.isValid(String(rawUserId))) ? String(rawUserId) : undefined;
+
     const order = new Order({
-      userId: getAuthenticatedUserId(req) || undefined,
-      customerId: req.body.customerId || req.body.customer?.id || undefined,
+      userId: validUserId,
+      customerId: req.body.customerId || req.body.customer?.id || (validUserId ? String(validUserId) : undefined),
       productId,
       productName,
       categoryName,
