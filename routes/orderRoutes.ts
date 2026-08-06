@@ -49,7 +49,7 @@ function buildProductSnapshot(body: any) {
     name: body.product?.name || body.productName || "",
     categoryName: body.product?.categoryName || body.categoryName || "",
     subcategory: body.product?.subcategory || body.subcategory || "",
-    image: body.product?.image || "",
+    image: body.product?.image || body.productImage || body.image || "",
     price: toNumber(body.product?.price || body.packagePrice || body.amount || 0),
     originalPrice: toNumber(body.product?.originalPrice || body.packagePrice || body.amount || 0),
   };
@@ -372,8 +372,25 @@ res.status(201).json(order);
 
 router.get("/my", authMiddleware, async (req: Request, res: Response) => {
   try {
-    const userId = (req as Request & { user?: { id?: string } }).user?.id;
-    const orders = await Order.find({ $or: [{ userId }, { customerId: userId }] }).sort({ createdAt: -1 });
+    const user = (req as Request & { user?: { id?: string; email?: string } }).user;
+    const userId = user?.id;
+    const userEmail = user?.email?.toLowerCase().trim();
+
+    const queryConditions: any[] = [];
+    if (userId) {
+      queryConditions.push({ userId }, { customerId: userId });
+    }
+    if (userEmail) {
+      const emailRegex = new RegExp(`^${userEmail.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')}$`, 'i');
+      queryConditions.push(
+        { "customer.email": emailRegex },
+        { "booking.email": emailRegex },
+        { "bookingDetails.0.email": emailRegex },
+        { "bookingDetails.email": emailRegex }
+      );
+    }
+
+    const orders = await Order.find(queryConditions.length > 0 ? { $or: queryConditions } : {}).sort({ createdAt: -1 });
     res.json(orders);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unable to fetch your orders.";

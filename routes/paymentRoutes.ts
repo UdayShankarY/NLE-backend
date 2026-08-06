@@ -2,10 +2,24 @@ import express, { Request, Response } from "express";
 import Razorpay from "razorpay";
 import crypto from "crypto";
 import axios from "axios";
+import jwt from "jsonwebtoken";
 import "dotenv/config";
 import Order from "../models/Order";
 
 const router = express.Router();
+
+function getAuthenticatedUserId(req: Request) {
+  const authorization = req.headers.authorization;
+  if (typeof authorization !== "string" || !authorization.startsWith("Bearer ")) {
+    return undefined;
+  }
+  try {
+    const decoded = jwt.verify(authorization.slice(7).trim(), process.env.JWT_SECRET || "secret") as { id?: string };
+    return decoded.id;
+  } catch {
+    return undefined;
+  }
+}
 
 /**
  * Validate Razorpay configuration
@@ -127,8 +141,11 @@ router.post("/verify", async (req: Request, res: Response) => {
     }
 
     if (orderPayload) {
+      const authUserId = getAuthenticatedUserId(req) || orderPayload.userId || orderPayload.customer?.id;
       const payload = {
         ...orderPayload,
+        userId: authUserId || undefined,
+        customerId: authUserId || orderPayload.customerId || orderPayload.customer?.id || undefined,
         paymentStatus: "paid",
         paymentMethod: "razorpay",
         razorpayOrderId: razorpay_order_id,
@@ -147,47 +164,31 @@ router.post("/verify", async (req: Request, res: Response) => {
         userId: order.userId,
       });
 
-      // =============================
-      // Send booking to n8n
-      // =============================
-      try {
-  await axios.post(process.env.N8N_WEBHOOK_URL!,
-  {
-    orderNumber: order.orderNumber,
-    orderId: order._id,
-
-    // ✅ ADD THIS
-    customer: order.customer,
-
-    productId: order.productId,
-    productName: order.productName,
-    categoryName: order.categoryName,
-    subcategory: order.subcategory,
-
-    packagePrice: order.packagePrice,
-    amount: order.amount,
-
-    paymentMethod: order.paymentMethod,
-    paymentStatus: order.paymentStatus,
-
-    bookingDetails: order.bookingDetails,
-
-    addons: order.addons,
-    activities: order.activities,
-
-    razorpayOrderId: order.razorpayOrderId,
-    razorpayPaymentId: order.razorpayPaymentId,
-    razorpaySignature: order.razorpaySignature,
-
-    createdAt: order.createdAt,
-  }
-);
-
-  console.log("✅ Booking sent to n8n");
-} catch (err: any) {
-  console.error("❌ Failed to send booking to n8n");
-  console.error(err?.response?.data || err.message);
-}
+      // Non-blocking n8n notification
+      if (process.env.N8N_WEBHOOK_URL) {
+        axios.post(process.env.N8N_WEBHOOK_URL, {
+          orderNumber: order.orderNumber,
+          orderId: order._id,
+          customer: order.customer,
+          productId: order.productId,
+          productName: order.productName,
+          categoryName: order.categoryName,
+          subcategory: order.subcategory,
+          packagePrice: order.packagePrice,
+          amount: order.amount,
+          paymentMethod: order.paymentMethod,
+          paymentStatus: order.paymentStatus,
+          bookingDetails: order.bookingDetails,
+          addons: order.addons,
+          activities: order.activities,
+          razorpayOrderId: order.razorpayOrderId,
+          razorpayPaymentId: order.razorpayPaymentId,
+          razorpaySignature: order.razorpaySignature,
+          createdAt: order.createdAt,
+        })
+        .then(() => console.log("✅ Booking sent to n8n"))
+        .catch((err: any) => console.error("❌ Failed to send booking to n8n:", err?.message));
+      }
       return res.status(200).json({
         success: true,
         message: "Payment verified successfully",

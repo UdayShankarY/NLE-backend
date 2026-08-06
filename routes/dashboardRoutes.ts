@@ -49,4 +49,27 @@ router.get("/users", async (_req: Request, res: Response) => {
   }
 });
 
+router.patch("/users/:id/role", async (req: Request, res: Response) => {
+  try {
+    const { role } = req.body;
+    if (!role || !["user", "admin"].includes(role)) {
+      return res.status(400).json({ error: "Invalid role specified" });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      { role },
+      { new: true, runValidators: true }
+    ).select("firstName lastName email role createdAt");
+
+    if (!updatedUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.json(updatedUser);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;
