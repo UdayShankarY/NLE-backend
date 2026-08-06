@@ -79,16 +79,17 @@ const handleReorder = async (req: Request, res: Response) => {
 router.put("/reorder", handleReorder);
 
 router.put("/:id", async (req: Request, res: Response) => {
-  if (req.params.id === "reorder") {
+  const id = String(req.params.id);
+  if (id === "reorder") {
     return handleReorder(req, res);
   }
 
-  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
     return res.status(400).json({ error: "Invalid category ID format" });
   }
 
   try {
-    const updated = await Category.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const updated = await Category.findByIdAndUpdate(id, req.body, { new: true });
     if (updated) {
       aiReindexService.scheduleReindex();
     }
@@ -99,8 +100,13 @@ router.put("/:id", async (req: Request, res: Response) => {
 });
 
 router.delete("/:id", async (req: Request, res: Response) => {
+  const id = String(req.params.id);
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ error: "Invalid category ID format" });
+  }
+
   try {
-    const deleted = await Category.findByIdAndDelete(req.params.id);
+    const deleted = await Category.findByIdAndDelete(id);
     if (deleted) {
       aiReindexService.scheduleReindex();
     }
